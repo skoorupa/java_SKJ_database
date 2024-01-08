@@ -74,9 +74,9 @@ public class DatabaseNode {
                 // IP1, IP2, IP3...
                 // get-value ...
                 // dodaj IP do listy odpytanych
-                String nodeIP = request.substring(request.indexOf(' ')+1, request.indexOf('|'));
+                String nodeIP = request.substring(request.indexOf(' ')+1);
                 askedNodes.add(nodeIP);
-                request = request.substring(request.indexOf('|')+1);
+                request = br.readLine();
                 if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
             }
             switch (command) {
@@ -105,7 +105,10 @@ public class DatabaseNode {
                             Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
-                            nodebw.write("node-ask "+nodeIPs.get(nodeIP)+"|"+command+" "+arg);
+                            nodebw.write("node-ask "+nodeIPs.get(nodeIP));
+                            nodebw.newLine();
+                            nodebw.flush();
+                            nodebw.write(command+" "+arg);
                             nodebw.newLine();
                             nodebw.flush();
                             String response = nodebr.readLine();
