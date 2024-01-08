@@ -1,10 +1,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 public class DatabaseNode {
     static int tcpport = 10000;
@@ -69,6 +66,7 @@ public class DatabaseNode {
             if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
             HashSet<String> askedNodes = new HashSet<>();
 
+            String originIPs = "";
             if (command.equals("node-ask")) {
                 // node-ask sourceIP
                 // IP1, IP2, IP3...
@@ -76,8 +74,12 @@ public class DatabaseNode {
                 // dodaj IP do listy odpytanych
                 String nodeIP = request.substring(request.indexOf(' ')+1);
                 askedNodes.add(nodeIP);
+                originIPs = br.readLine();
+                System.out.println("[N]: got origin IPs: "+originIPs);
+                askedNodes.addAll(Arrays.asList(originIPs.split(",")));
                 request = br.readLine();
                 if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
+                System.out.println("[N]: Command from node: "+request);
             }
             switch (command) {
                 case "node-join": {
@@ -106,6 +108,9 @@ public class DatabaseNode {
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                             nodebw.write("node-ask "+nodeIPs.get(nodeIP));
+                            nodebw.newLine();
+                            nodebw.flush();
+                            nodebw.write(originIPs.isEmpty()?getOrigins():originIPs);
                             nodebw.newLine();
                             nodebw.flush();
                             nodebw.write(command+" "+arg);
@@ -154,5 +159,14 @@ public class DatabaseNode {
 
     public static int getPort(String IP) {
         return Integer.parseInt(IP.substring(IP.indexOf(':')+1));
+    }
+
+    public static String getOrigins() {
+        String result = "";
+        for (String broadcast :
+                nodeIPs.values()) {
+            result+=broadcast+",";
+        }
+        return result;
     }
 }
