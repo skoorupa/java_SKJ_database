@@ -3,6 +3,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Objects;
 
 public class DatabaseNode {
     static int tcpport = 10000;
@@ -36,9 +38,8 @@ public class DatabaseNode {
 
         for (String ip : connect_ips) {
             System.out.println("[N]: Connecting to node: "+ip);
-            String[] split = ip.split(":");
 
-            Socket node = new Socket(split[0], Integer.parseInt(split[1]));
+            Socket node = new Socket(getHost(ip), getPort(ip));
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
             BufferedReader br = new BufferedReader(new InputStreamReader(node.getInputStream()));
 //            connections.add(ip);
@@ -66,12 +67,24 @@ public class DatabaseNode {
 
             String command = request;
             if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
+            HashSet<String> askedNodes = new HashSet<>();
 
+            if (command.equals("node-ask")) {
+                // node-ask sourceIP
+                // IP1, IP2, IP3...
+                // get-value ...
+                // dodaj IP do listy odpytanych
+                String nodeIP = request.substring(request.indexOf(' ')+1, request.indexOf('|'));
+                askedNodes.add(nodeIP);
+                request = request.substring(request.indexOf('|')+1);
+                if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
+            }
             switch (command) {
                 case "node-join": {
                     // ja tu dostaje tylko tcp port
-                    String host = hello.getRemoteSocketAddress().toString().substring(1,hello.getRemoteSocketAddress().toString().indexOf(':'));
+                    String host = getHost(hello.getRemoteSocketAddress().toString());
                     String sourceIP = host+":"+request.substring(request.indexOf(' ') + 1, request.indexOf('|')); // node IP
+                    sourceIP = sourceIP.replace("/",""); // remove "/" at the beginning
                     String destinationIP = request.substring(request.indexOf('|')+1); // moj IP u noda
                     nodeIPs.put(sourceIP,destinationIP);
                     System.out.println("[N]: New node joined: "+sourceIP+", he sees me as: "+destinationIP);
@@ -80,11 +93,33 @@ public class DatabaseNode {
                 }
                 case "get-value": {
                     String arg = request.substring(request.indexOf(' ') + 1);
-                    if (records.containsKey(arg))
+                    if (records.containsKey(arg)) {
+                        System.out.println("[N]: Found record: "+arg + ":" + records.get(arg));
                         bw.write(arg + ":" + records.get(arg));
-                    else {
-
-                        bw.write("ERROR");
+                    } else {
+                        System.out.println("[N]: Cannot find record "+arg+", will ask other nodes!");
+                        boolean found = false;
+                        for (String nodeIP : nodeIPs.keySet()) {
+                            if (askedNodes.contains(nodeIP)) continue;
+                            System.out.println("[N]: Asking "+nodeIP);
+                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
+                            BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                            nodebw.write("node-ask "+nodeIPs.get(nodeIP)+"|"+command+" "+arg);
+                            nodebw.newLine();
+                            nodebw.flush();
+                            String response = nodebr.readLine();
+                            if (!Objects.equals(response, "ERROR")) {
+                                bw.write(response);
+                                found = true;
+                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                break;
+                            } else askedNodes.add(nodeIP);
+                        }
+                        if (!found) {
+                            bw.write("ERROR");
+                            System.out.println("[N]: Could not find record "+arg);
+                        }
                     }
                     break;
                 }
@@ -108,5 +143,13 @@ public class DatabaseNode {
 
             System.out.println("[N]: Ended connection with "+helloIP);
         }
+    }
+
+    public static String getHost(String IP) {
+        return IP.substring(0,IP.indexOf(':'));
+    }
+
+    public static int getPort(String IP) {
+        return Integer.parseInt(IP.substring(IP.indexOf(':')+1));
     }
 }
