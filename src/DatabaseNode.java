@@ -9,7 +9,7 @@ public class DatabaseNode {
     static HashMap<String, String> records = new HashMap<>();
     static ArrayList<String> connect_ips = new ArrayList<>();
     static ServerSocket server;
-    static ArrayList<String> connections = new ArrayList<>();
+    static HashMap<String,String> nodeIPs = new HashMap<>(); // K - node IP, V - moj IP u innych
 
     public static void main(String[] args) throws IOException {
         for (int i = 0; i < args.length; i++) {
@@ -35,18 +35,22 @@ public class DatabaseNode {
         }
 
         for (String ip : connect_ips) {
-            connections.add(ip);
             System.out.println("[N]: Connecting to node: "+ip);
-            // connect to these todo
             String[] split = ip.split(":");
+
             Socket node = new Socket(split[0], Integer.parseInt(split[1]));
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+            BufferedReader br = new BufferedReader(new InputStreamReader(node.getInputStream()));
+//            connections.add(ip);
 
-            bw.write("node-join "+tcpport);
+            bw.write("node-join "+tcpport+"|"+ip);
             bw.newLine();
             bw.flush();
+            String destination = br.readLine();
+            nodeIPs.put(ip,destination);
+
             node.close();
-            System.out.println("[N]: Connected successfully");
+            System.out.println("[N]: Connected successfully: saved "+ip+", he sees me as "+destination);
         }
 
         boolean terminate = false;
@@ -65,10 +69,13 @@ public class DatabaseNode {
 
             switch (command) {
                 case "node-join": {
+                    // ja tu dostaje tylko tcp port
                     String host = hello.getRemoteSocketAddress().toString().substring(1,hello.getRemoteSocketAddress().toString().indexOf(':'));
-                    String nodeIP = host+":"+request.substring(request.indexOf(' ') + 1);
-                    System.out.println("[N]: New node joined: "+nodeIP);
-                    connections.add(nodeIP);
+                    String sourceIP = host+":"+request.substring(request.indexOf(' ') + 1, request.indexOf('|')); // node IP
+                    String destinationIP = request.substring(request.indexOf('|')+1); // moj IP u noda
+                    nodeIPs.put(sourceIP,destinationIP);
+                    System.out.println("[N]: New node joined: "+sourceIP+", he sees me as: "+destinationIP);
+                    bw.write(sourceIP);
                     break;
                 }
                 case "get-value": {
