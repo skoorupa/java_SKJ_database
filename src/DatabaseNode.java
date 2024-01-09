@@ -1,4 +1,5 @@
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -244,6 +245,56 @@ public class DatabaseNode {
                     val = split[1];
                 }
                 bw.write("OK");
+                break;
+            }
+            case "find-key": {
+                String arg = request.substring(request.indexOf(' ') + 1);
+                String wantedkey = arg;
+                synchronized (key) {
+                    if (key.equals(wantedkey)) {
+                        System.out.println("[N]: I have "+wantedkey);
+//                        if (nodeIPs.containsKey(helloIP)) {
+//                            // to serwer wysyla zapytanie
+//                            bw.write(nodeIPs.get(helloIP));
+//                        } else {
+                            // to klient wysyla zapytanie
+                            bw.write(InetAddress.getLocalHost().getHostAddress()+":"+tcpport);
+//                        }
+                    } else {
+                        System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
+                        synchronized (currentRequests) {
+                            currentRequests.add(request);
+                        }
+                        boolean found = false;
+                        for (String nodeIP : nodeIPs.keySet()) {
+                            if (askedNodes.contains(nodeIP)) continue;
+                            System.out.println("[N]: Asking "+nodeIP);
+                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
+                            BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                            nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
+                            nodebw.newLine();
+                            nodebw.flush();
+                            nodebw.write(command+" "+arg);
+                            nodebw.newLine();
+                            nodebw.flush();
+                            String response = nodebr.readLine();
+                            if (!Objects.equals(response, "ERROR")) {
+                                bw.write(response);
+                                found = true;
+                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                break;
+                            } else askedNodes.add(nodeIP);
+                        }
+                        synchronized (currentRequests) {
+                            currentRequests.remove(request);
+                        }
+                        if (!found) {
+                            bw.write("ERROR");
+                            System.out.println("[N]: Could not find record "+arg);
+                        }
+                    }
+                }
                 break;
             }
             case "terminate": {
