@@ -174,7 +174,7 @@ public class DatabaseNode {
                             nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
                             nodebw.newLine();
                             nodebw.flush();
-                            nodebw.write(command+" "+arg);
+                            nodebw.write(request);
                             nodebw.newLine();
                             nodebw.flush();
                             String response = nodebr.readLine();
@@ -220,7 +220,7 @@ public class DatabaseNode {
                             nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
                             nodebw.newLine();
                             nodebw.flush();
-                            nodebw.write(command+" "+arg);
+                            nodebw.write(request);
                             nodebw.newLine();
                             nodebw.flush();
                             String response = nodebr.readLine();
@@ -280,7 +280,7 @@ public class DatabaseNode {
                             nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
                             nodebw.newLine();
                             nodebw.flush();
-                            nodebw.write(command+" "+arg);
+                            nodebw.write(request);
                             nodebw.newLine();
                             nodebw.flush();
                             String response = nodebr.readLine();
