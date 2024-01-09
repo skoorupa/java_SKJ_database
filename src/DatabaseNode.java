@@ -148,7 +148,7 @@ public class DatabaseNode {
             }
             case "get-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-//                synchronized (records) {
+                synchronized (records) {
                     if (records.containsKey(arg)) {
                         System.out.println("[N]: Found record: "+arg + ":" + records.get(arg));
                         bw.write(arg + ":" + records.get(arg));
@@ -186,7 +186,53 @@ public class DatabaseNode {
                             System.out.println("[N]: Could not find record "+arg);
                         }
                     }
-//                }
+                }
+                break;
+            }
+            case "set-value": {
+                String arg = request.substring(request.indexOf(' ') + 1);
+                String record = request.substring(request.indexOf(' ') + 1, request.indexOf(':'));
+                String newvalue = request.substring(request.indexOf(':') + 1);
+                synchronized (records) {
+                    if (records.containsKey(record)) {
+                        System.out.println("[N]: I have record: "+record + ", changing value to: "+newvalue);
+                        records.replace(record,newvalue);
+                        bw.write("OK");
+                    } else {
+                        System.out.println("[N]: Cannot find record "+record+", will ask other nodes!");
+                        synchronized (currentRequests) {
+                            currentRequests.add(request);
+                        }
+                        boolean found = false;
+                        for (String nodeIP : nodeIPs.keySet()) {
+                            if (askedNodes.contains(nodeIP)) continue;
+                            System.out.println("[N]: Asking "+nodeIP);
+                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
+                            BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                            nodebw.write("node-ask "+nodeIPs.get(nodeIP));
+                            nodebw.newLine();
+                            nodebw.flush();
+                            nodebw.write(command+" "+arg);
+                            nodebw.newLine();
+                            nodebw.flush();
+                            String response = nodebr.readLine();
+                            if (!Objects.equals(response, "ERROR")) {
+                                bw.write(response);
+                                found = true;
+                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                break;
+                            } else askedNodes.add(nodeIP);
+                        }
+                        synchronized (currentRequests) {
+                            currentRequests.remove(request);
+                        }
+                        if (!found) {
+                            bw.write("ERROR");
+                            System.out.println("[N]: Could not find record "+arg);
+                        }
+                    }
+                }
                 break;
             }
             case "new-record": {
