@@ -7,6 +7,7 @@ public class DatabaseNode {
     static boolean terminate = false;
     static int tcpport = 10000;
     static ArrayList<Thread> threads = new ArrayList<>();
+    static ArrayList<Socket> sockets = new ArrayList<>();
     static ServerSocket server;
     static HashMap<String, String> records = new HashMap<>();
     static ArrayList<String> connect_ips = new ArrayList<>();
@@ -39,6 +40,7 @@ public class DatabaseNode {
             System.out.println("[N]: Connecting to node: "+ip);
 
             Socket node = new Socket(getHost(ip), getPort(ip));
+            sockets.add(node);
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
             BufferedReader br = new BufferedReader(new InputStreamReader(node.getInputStream()));
 //            connections.add(ip);
@@ -50,6 +52,7 @@ public class DatabaseNode {
             nodeIPs.put(ip,destination);
 
             node.close();
+            sockets.remove(node);
             System.out.println("[N]: Connected successfully: saved "+ip+", he sees me as "+destination);
         }
         while (!terminate) {
@@ -90,6 +93,7 @@ public class DatabaseNode {
     }
 
     public static void acceptSocket(Socket hello) throws IOException {
+        sockets.add(hello);
         String helloIP = hello.getInetAddress()+":"+hello.getPort();
         BufferedReader br = new BufferedReader(new InputStreamReader(hello.getInputStream()));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(hello.getOutputStream()));
@@ -184,6 +188,7 @@ public class DatabaseNode {
 
         bw.flush();
         hello.close();
+        sockets.remove(hello);
 
         System.out.println("[N]: Ended connection with "+helloIP);
     }
