@@ -342,6 +342,92 @@ public class DatabaseNode {
                 }
                 break;
             }
+            case "get-max" : {
+                synchronized (key) {
+                    int maxkey = key;
+                    int maxval = val;
+
+                    System.out.println("[N]: my record is "+key+":"+val+", will ask other nodes!");
+                    synchronized (currentRequests) {
+                        currentRequests.add(request);
+                    }
+                    for (String nodeIP : nodeIPs.keySet()) {
+                        if (askedNodes.contains(nodeIP)) continue;
+                        askedNodes.add(nodeIP);
+
+                        System.out.println("[N]: Asking "+nodeIP);
+                        Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                        BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
+                        BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                        nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
+                        nodebw.newLine();
+                        nodebw.flush();
+                        nodebw.write(request);
+                        nodebw.newLine();
+                        nodebw.flush();
+
+                        String response = nodebr.readLine();
+                        System.out.println("[N]: Got "+response);
+                        if (!response.equals("ERROR")) {
+                            int hiskey = Integer.parseInt(response.substring(0, response.indexOf(':')));
+                            int hisval = Integer.parseInt(response.substring(response.indexOf(':')+1));
+                            if (hisval > val) {
+                                maxkey = hiskey;
+                                maxval = hisval;
+                            }
+                        }
+                    }
+                    synchronized (currentRequests) {
+                        currentRequests.remove(request);
+                    }
+                    bw.write(maxkey+":"+maxval);
+                    System.out.println("[N]: Sending "+maxkey+":"+maxval);
+                }
+                break;
+            }
+            case "get-min" : {
+                synchronized (key) {
+                    int minkey = key;
+                    int minval = val;
+
+                    System.out.println("[N]: my record is "+key+":"+val+", will ask other nodes!");
+                    synchronized (currentRequests) {
+                        currentRequests.add(request);
+                    }
+                    for (String nodeIP : nodeIPs.keySet()) {
+                        if (askedNodes.contains(nodeIP)) continue;
+                        askedNodes.add(nodeIP);
+
+                        System.out.println("[N]: Asking "+nodeIP);
+                        Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                        BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
+                        BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                        nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
+                        nodebw.newLine();
+                        nodebw.flush();
+                        nodebw.write(request);
+                        nodebw.newLine();
+                        nodebw.flush();
+
+                        String response = nodebr.readLine();
+                        System.out.println("[N]: Got "+response);
+                        if (!response.equals("ERROR")) {
+                            int hiskey = Integer.parseInt(response.substring(0, response.indexOf(':')));
+                            int hisval = Integer.parseInt(response.substring(response.indexOf(':')+1));
+                            if (hisval < val) {
+                                minkey = hiskey;
+                                minval = hisval;
+                            }
+                        }
+                    }
+                    synchronized (currentRequests) {
+                        currentRequests.remove(request);
+                    }
+                    bw.write(minkey+":"+minval);
+                    System.out.println("[N]: Sending "+minkey+":"+minval);
+                }
+                break;
+            }
             case "terminate": {
                 terminate = true;
                 server.close();
