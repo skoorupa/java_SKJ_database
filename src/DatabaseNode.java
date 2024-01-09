@@ -37,7 +37,8 @@ public class DatabaseNode {
         try {
             server = new ServerSocket(tcpport);
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            System.err.println("[N]: "+tcpport+" is already in use, shutting down...");
+            return;
         }
         System.out.println("[N]: Running new node at port: "+tcpport);
         System.out.println("[N]: Record: "+key+":"+val);
