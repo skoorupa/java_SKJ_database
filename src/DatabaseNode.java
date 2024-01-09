@@ -53,7 +53,7 @@ public class DatabaseNode {
                 BufferedReader br = new BufferedReader(new InputStreamReader(node.getInputStream()));
 //            connections.add(ip);
 
-                bw.write("node-join "+tcpport+"|"+ip);
+                bw.write("NODE-JOIN "+tcpport+"|"+ip);
                 bw.newLine();
                 bw.flush();
                 destination = br.readLine();
@@ -109,7 +109,7 @@ public class DatabaseNode {
         if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
         HashSet<String> askedNodes = new HashSet<>();
 
-        if (command.equals("node-ask")) {
+        if (command.equals("NODE-ASK")) {
             // node-ask sourceIP
             // get-value ...
             // dodaj IP do listy odpytanych
@@ -132,7 +132,7 @@ public class DatabaseNode {
             System.out.println("[N]: Command from node: "+request);
         }
         switch (command) {
-            case "node-join": {
+            case "NODE-JOIN": {
                 // ja tu dostaje tylko tcp port
                 String host = getHost(hello.getRemoteSocketAddress().toString());
                 String sourceIP = host+":"+request.substring(request.indexOf(' ') + 1, request.indexOf('|')); // node IP
@@ -164,7 +164,7 @@ public class DatabaseNode {
                             Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
-                            nodebw.write("node-ask "+nodeIPs.get(nodeIP));
+                            nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
                             nodebw.newLine();
                             nodebw.flush();
                             nodebw.write(command+" "+arg);
@@ -210,7 +210,7 @@ public class DatabaseNode {
                             Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
-                            nodebw.write("node-ask "+nodeIPs.get(nodeIP));
+                            nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
                             nodebw.newLine();
                             nodebw.flush();
                             nodebw.write(command+" "+arg);
