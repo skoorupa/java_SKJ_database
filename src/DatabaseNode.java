@@ -130,6 +130,7 @@ public class DatabaseNode {
             }
             askedNodes.add(nodeIP);
             if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
+            else command = request;
             System.out.println("[N]: Command from node: "+request);
         }
         switch (command) {
