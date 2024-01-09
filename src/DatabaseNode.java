@@ -147,6 +147,11 @@ public class DatabaseNode {
                 bw.write(sourceIP);
                 break;
             }
+            case "NODE-BYE": {
+                String nodeIP = request.substring(request.indexOf(' ')+1);
+                nodeIPs.remove(nodeIP);
+                break;
+            }
             case "get-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
                 String wantedkey = arg;
@@ -301,6 +306,17 @@ public class DatabaseNode {
                 terminate = true;
                 server.close();
                 bw.write("OK");
+
+                for (String nodeIP : nodeIPs.keySet()) {
+                    System.out.println("[N]: Saying goodbye to "+nodeIP);
+                    Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                    BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                    nodebw.write("NODE-BYE "+nodeIPs.get(nodeIP));
+                    nodebw.newLine();
+                    nodebw.flush();
+                    node.close();
+                }
+
                 bw.flush();
                 hello.close();
                 sockets.remove(hello);
