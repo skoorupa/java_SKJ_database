@@ -81,7 +81,6 @@ public class DatabaseNode {
                 });
                 t.start();
                 threads.add(t);
-                System.out.println(threads.size());
             } catch (IOException e) {
                 System.err.println("[N]: Server closed...");
             }
