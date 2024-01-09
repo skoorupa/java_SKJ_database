@@ -148,12 +148,13 @@ public class DatabaseNode {
             }
             case "get-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
+                String wantedkey = arg;
                 synchronized (key) {
-                    if (key.equals(arg)) {
-                        System.out.println("[N]: Found record: "+arg + ":" + val);
-                        bw.write(arg + ":" + val);
+                    if (key.equals(wantedkey)) {
+                        System.out.println("[N]: Found record: "+wantedkey + ":" + val);
+                        bw.write(wantedkey + ":" + val);
                     } else {
-                        System.out.println("[N]: Cannot find record "+arg+", will ask other nodes!");
+                        System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
                         synchronized (currentRequests) {
                             currentRequests.add(request);
                         }
