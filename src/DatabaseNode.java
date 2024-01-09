@@ -9,7 +9,9 @@ public class DatabaseNode {
     static ArrayList<Thread> threads = new ArrayList<>();
     static ArrayList<Socket> sockets = new ArrayList<>();
     static ServerSocket server;
-    static HashMap<String, String> records = new HashMap<>();
+//    static HashMap<String, String> records = new HashMap<>();
+    static String key = "";
+    static String val = "";
     static ArrayList<String> connect_ips = new ArrayList<>();
     static HashMap<String,String> nodeIPs = new HashMap<>(); // K - node IP, V - moj IP u innych
     static HashSet<String> currentRequests = new HashSet<>();
@@ -22,7 +24,8 @@ public class DatabaseNode {
                     break;
                 case "-record":
                     String[] split = args[++i].split(":");
-                    records.put(split[0], split[1]);
+                    key = split[0];
+                    val = split[1];
                     break;
                 case "-connect":
                     connect_ips.add(args[++i]);
@@ -36,10 +39,7 @@ public class DatabaseNode {
             System.err.println(e.getMessage());
         }
         System.out.println("[N]: Running new node at port: "+tcpport);
-        System.out.println("[N]: Records:");
-        for (String key : records.keySet()) {
-            System.out.println(key+": "+records.get(key));
-        }
+        System.out.println("[N]: Record: "+key+":"+val);
 
         for (String ip : connect_ips) {
             System.out.println("[N]: Connecting to node: "+ip);
@@ -148,10 +148,10 @@ public class DatabaseNode {
             }
             case "get-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-                synchronized (records) {
-                    if (records.containsKey(arg)) {
-                        System.out.println("[N]: Found record: "+arg + ":" + records.get(arg));
-                        bw.write(arg + ":" + records.get(arg));
+                synchronized (key) {
+                    if (key.equals(arg)) {
+                        System.out.println("[N]: Found record: "+arg + ":" + val);
+                        bw.write(arg + ":" + val);
                     } else {
                         System.out.println("[N]: Cannot find record "+arg+", will ask other nodes!");
                         synchronized (currentRequests) {
@@ -191,15 +191,15 @@ public class DatabaseNode {
             }
             case "set-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-                String record = request.substring(request.indexOf(' ') + 1, request.indexOf(':'));
+                String wantedkey = request.substring(request.indexOf(' ') + 1, request.indexOf(':'));
                 String newvalue = request.substring(request.indexOf(':') + 1);
-                synchronized (records) {
-                    if (records.containsKey(record)) {
-                        System.out.println("[N]: I have record: "+record + ", changing value to: "+newvalue);
-                        records.replace(record,newvalue);
+                synchronized (key) {
+                    if (key.equals(wantedkey)) {
+                        System.out.println("[N]: I have record: "+wantedkey + ", changing value to: "+newvalue);
+                        val = newvalue;
                         bw.write("OK");
                     } else {
-                        System.out.println("[N]: Cannot find record "+record+", will ask other nodes!");
+                        System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
                         synchronized (currentRequests) {
                             currentRequests.add(request);
                         }
@@ -238,8 +238,9 @@ public class DatabaseNode {
             case "new-record": {
                 String arg = request.substring(request.indexOf(' ') + 1);
                 String[] split = arg.split(":");
-                synchronized (records) {
-                    records.put(split[0], split[1]);
+                synchronized (key) {
+                    key = split[0];
+                    val = split[1];
                 }
                 bw.write("OK");
                 break;
