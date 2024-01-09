@@ -6,13 +6,13 @@ import java.util.*;
 
 public class DatabaseNode {
     static boolean terminate = false;
-    static int tcpport = 10000;
+    static int tcpport = 10000; // default
     static ArrayList<Thread> threads = new ArrayList<>();
     static ArrayList<Socket> sockets = new ArrayList<>();
     static ServerSocket server;
 //    static HashMap<String, String> records = new HashMap<>();
-    static String key = "";
-    static String val = "";
+    static Integer key;
+    static Integer val;
     static ArrayList<String> connect_ips = new ArrayList<>();
     static HashMap<String,String> nodeIPs = new HashMap<>(); // K - node IP, V - moj IP u innych
     static HashSet<String> currentRequests = new HashSet<>();
@@ -25,8 +25,8 @@ public class DatabaseNode {
                     break;
                 case "-record":
                     String[] split = args[++i].split(":");
-                    key = split[0];
-                    val = split[1];
+                    key = Integer.parseInt(split[0]);
+                    val = Integer.parseInt(split[1]);
                     break;
                 case "-connect":
                     connect_ips.add(args[++i]);
@@ -154,9 +154,18 @@ public class DatabaseNode {
             }
             case "get-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-                String wantedkey = arg;
+                int wantedkey = 0;
+                try {
+                    wantedkey = Integer.parseInt(arg);
+                } catch (Exception e) {
+                    System.out.println("[N]: "+arg+" is invalid");
+                    bw.write("ERROR");
+                    bw.flush();
+                    hello.close();
+                    return;
+                }
                 synchronized (key) {
-                    if (key.equals(wantedkey)) {
+                    if (key == wantedkey) {
                         System.out.println("[N]: Found record: "+wantedkey + ":" + val);
                         bw.write(wantedkey + ":" + val);
                     } else {
@@ -198,10 +207,20 @@ public class DatabaseNode {
             }
             case "set-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-                String wantedkey = request.substring(request.indexOf(' ') + 1, request.indexOf(':'));
-                String newvalue = request.substring(request.indexOf(':') + 1);
+                int wantedkey = 0;
+                int newvalue = 0;
+                try {
+                    wantedkey = Integer.parseInt(request.substring(request.indexOf(' ') + 1, request.indexOf(':')));
+                    newvalue = Integer.parseInt(request.substring(request.indexOf(':') + 1));
+                } catch (Exception e) {
+                    System.out.println("[N]: "+arg+" is invalid");
+                    bw.write("ERROR");
+                    bw.flush();
+                    hello.close();
+                    return;
+                }
                 synchronized (key) {
-                    if (key.equals(wantedkey)) {
+                    if (key == wantedkey) {
                         System.out.println("[N]: I have record: "+wantedkey + ", changing value to: "+newvalue);
                         val = newvalue;
                         bw.write("OK");
@@ -245,18 +264,37 @@ public class DatabaseNode {
             case "new-record": {
                 String arg = request.substring(request.indexOf(' ') + 1);
                 String[] split = arg.split(":");
+                try {
+                    Integer.parseInt(split[0]);
+                    Integer.parseInt(split[1]);
+                } catch (Exception e) {
+                    System.out.println("[N]: "+arg+" is invalid");
+                    bw.write("ERROR");
+                    bw.flush();
+                    hello.close();
+                    return;
+                }
                 synchronized (key) {
-                    key = split[0];
-                    val = split[1];
+                    key = Integer.parseInt(split[0]);
+                    val = Integer.parseInt(split[1]);
                 }
                 bw.write("OK");
                 break;
             }
             case "find-key": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-                String wantedkey = arg;
+                int wantedkey = 0;
+                try {
+                    wantedkey = Integer.parseInt(arg);
+                } catch (Exception e) {
+                    System.out.println("[N]: "+arg+" is invalid");
+                    bw.write("ERROR");
+                    bw.flush();
+                    hello.close();
+                    return;
+                }
                 synchronized (key) {
-                    if (key.equals(wantedkey)) {
+                    if (key == wantedkey) {
                         System.out.println("[N]: I have "+wantedkey);
 //                        if (nodeIPs.containsKey(helloIP)) {
 //                            // to serwer wysyla zapytanie
