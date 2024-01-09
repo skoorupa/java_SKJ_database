@@ -12,7 +12,7 @@ public class DatabaseNode {
     static HashMap<String, String> records = new HashMap<>();
     static ArrayList<String> connect_ips = new ArrayList<>();
     static HashMap<String,String> nodeIPs = new HashMap<>(); // K - node IP, V - moj IP u innych
-    static boolean asking = false;
+    static HashSet<String> currentRequests = new HashSet<>();
 
     public static void main(String[] args) {
         for (int i = 0; i < args.length; i++) {
@@ -110,7 +110,13 @@ public class DatabaseNode {
         HashSet<String> askedNodes = new HashSet<>();
 
         if (command.equals("node-ask")) {
-            if (asking) {
+            // node-ask sourceIP
+            // get-value ...
+            // dodaj IP do listy odpytanych
+            String nodeIP = request.substring(request.indexOf(' ')+1);
+            request = br.readLine();
+
+            if (isRequestProcessed(request)) {
                 System.out.println("[N]: My request got back to me! Sending ERROR");
                 bw.write("ERROR");
                 bw.newLine();
@@ -121,12 +127,7 @@ public class DatabaseNode {
                 System.out.println("[N]: Ended connection with "+helloIP);
                 return;
             }
-            // node-ask sourceIP
-            // get-value ...
-            // dodaj IP do listy odpytanych
-            String nodeIP = request.substring(request.indexOf(' ')+1);
             askedNodes.add(nodeIP);
-            request = br.readLine();
             if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
             System.out.println("[N]: Command from node: "+request);
         }
@@ -137,52 +138,63 @@ public class DatabaseNode {
                 String sourceIP = host+":"+request.substring(request.indexOf(' ') + 1, request.indexOf('|')); // node IP
                 sourceIP = sourceIP.replace("/",""); // remove "/" at the beginning
                 String destinationIP = request.substring(request.indexOf('|')+1); // moj IP u noda
-                nodeIPs.put(sourceIP,destinationIP);
+
+                synchronized (nodeIPs) {
+                    nodeIPs.put(sourceIP,destinationIP);
+                }
                 System.out.println("[N]: New node joined: "+sourceIP+", he sees me as: "+destinationIP);
                 bw.write(sourceIP);
                 break;
             }
             case "get-value": {
                 String arg = request.substring(request.indexOf(' ') + 1);
-                if (records.containsKey(arg)) {
-                    System.out.println("[N]: Found record: "+arg + ":" + records.get(arg));
-                    bw.write(arg + ":" + records.get(arg));
-                } else {
-                    System.out.println("[N]: Cannot find record "+arg+", will ask other nodes!");
-                    boolean found = false;
-                    asking = true;
-                    for (String nodeIP : nodeIPs.keySet()) {
-                        if (askedNodes.contains(nodeIP)) continue;
-                        System.out.println("[N]: Asking "+nodeIP);
-                        Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
-                        BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
-                        BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
-                        nodebw.write("node-ask "+nodeIPs.get(nodeIP));
-                        nodebw.newLine();
-                        nodebw.flush();
-                        nodebw.write(command+" "+arg);
-                        nodebw.newLine();
-                        nodebw.flush();
-                        String response = nodebr.readLine();
-                        if (!Objects.equals(response, "ERROR")) {
-                            bw.write(response);
-                            found = true;
-                            System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
-                            break;
-                        } else askedNodes.add(nodeIP);
+//                synchronized (records) {
+                    if (records.containsKey(arg)) {
+                        System.out.println("[N]: Found record: "+arg + ":" + records.get(arg));
+                        bw.write(arg + ":" + records.get(arg));
+                    } else {
+                        System.out.println("[N]: Cannot find record "+arg+", will ask other nodes!");
+                        synchronized (currentRequests) {
+                            currentRequests.add(request);
+                        }
+                        boolean found = false;
+                        for (String nodeIP : nodeIPs.keySet()) {
+                            if (askedNodes.contains(nodeIP)) continue;
+                            System.out.println("[N]: Asking "+nodeIP);
+                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
+                            BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
+                            nodebw.write("node-ask "+nodeIPs.get(nodeIP));
+                            nodebw.newLine();
+                            nodebw.flush();
+                            nodebw.write(command+" "+arg);
+                            nodebw.newLine();
+                            nodebw.flush();
+                            String response = nodebr.readLine();
+                            if (!Objects.equals(response, "ERROR")) {
+                                bw.write(response);
+                                found = true;
+                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                break;
+                            } else askedNodes.add(nodeIP);
+                        }
+                        synchronized (currentRequests) {
+                            currentRequests.remove(request);
+                        }
+                        if (!found) {
+                            bw.write("ERROR");
+                            System.out.println("[N]: Could not find record "+arg);
+                        }
                     }
-                    asking = false;
-                    if (!found) {
-                        bw.write("ERROR");
-                        System.out.println("[N]: Could not find record "+arg);
-                    }
-                }
+//                }
                 break;
             }
             case "new-record": {
                 String arg = request.substring(request.indexOf(' ') + 1);
                 String[] split = arg.split(":");
-                records.put(split[0], split[1]);
+                synchronized (records) {
+                    records.put(split[0], split[1]);
+                }
                 bw.write("OK");
                 break;
             }
@@ -208,11 +220,15 @@ public class DatabaseNode {
             default:
                 System.out.println("[N]: Error: could not process command: \""+command+"\"");
         }
-
         bw.flush();
+
         hello.close();
         sockets.remove(hello);
 
         System.out.println("[N]: Ended connection with "+helloIP);
+    }
+
+    public static synchronized boolean isRequestProcessed(String s) {
+        return currentRequests.contains(s);
     }
 }
