@@ -296,6 +296,7 @@ public class DatabaseNode {
                 synchronized (key) {
                     key = Integer.parseInt(split[0]);
                     val = Integer.parseInt(split[1]);
+                    System.out.println("["+tcpport+"]: set new pair: "+key+":"+val);
                 }
                 bw.write("OK");
                 break;
