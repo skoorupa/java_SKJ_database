@@ -352,7 +352,7 @@ public class DatabaseNode {
                             if (!Objects.equals(response, "ERROR")) {
                                 bw.write(response);
                                 found = true;
-                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                System.out.println("[N]: "+nodeIP+" says this key has "+response);
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
