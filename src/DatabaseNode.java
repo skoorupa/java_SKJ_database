@@ -199,7 +199,7 @@ public class DatabaseNode {
                             if (!Objects.equals(response, "ERROR")) {
                                 bw.write(response);
                                 found = true;
-                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                System.out.println("[N]: "+nodeIP+" found record! Response is: "+response);
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
@@ -264,7 +264,7 @@ public class DatabaseNode {
                             if (!Objects.equals(response, "ERROR")) {
                                 bw.write(response);
                                 found = true;
-                                System.out.println("[N]: Found record at "+nodeIP+"! Response is: "+response);
+                                System.out.println("[N]: "+nodeIP+" found record! Response is: "+response);
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
