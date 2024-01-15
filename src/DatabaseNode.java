@@ -10,7 +10,6 @@ public class DatabaseNode {
     static ArrayList<Thread> threads = new ArrayList<>();
     static ArrayList<Socket> sockets = new ArrayList<>();
     static ServerSocket server;
-//    static HashMap<String, String> records = new HashMap<>();
     static Integer key;
     static Integer val;
     static ArrayList<String> connect_ips = new ArrayList<>();
@@ -316,13 +315,13 @@ public class DatabaseNode {
                 synchronized (key) {
                     if (key == wantedkey) {
                         System.out.println("[N]: I have "+wantedkey);
-//                        if (nodeIPs.containsKey(helloIP)) {
-//                            // to serwer wysyla zapytanie
-//                            bw.write(nodeIPs.get(helloIP));
-//                        } else {
+                        if (nodeIPs.containsKey(helloIP)) {
+                            // to serwer wysyla zapytanie
+                            bw.write(nodeIPs.get(helloIP));
+                        } else {
                             // to klient wysyla zapytanie
-                            bw.write(InetAddress.getLocalHost().getHostAddress()+":"+tcpport);
-//                        }
+                            bw.write(hello.getInetAddress().getHostName()+":"+tcpport);
+                        }
                     } else {
                         System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
                         synchronized (currentRequests) {
