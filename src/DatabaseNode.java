@@ -36,14 +36,14 @@ public class DatabaseNode {
         try {
             server = new ServerSocket(tcpport);
         } catch (IOException e) {
-            System.err.println("[N]: "+tcpport+" is already in use, shutting down...");
+            System.err.println("["+tcpport+"]: "+tcpport+" is already in use, shutting down...");
             return;
         }
-        System.out.println("[N]: Running new node at port: "+tcpport);
-        System.out.println("[N]: Record: "+key+":"+val);
+        System.out.println("["+tcpport+"]: Running new node at port: "+tcpport);
+        System.out.println("["+tcpport+"]: Record: "+key+":"+val);
 
         for (String ip : connect_ips) {
-            System.out.println("[N]: Connecting to node: "+ip);
+            System.out.println("["+tcpport+"]: Connecting to node: "+ip);
 
             Socket node = null;
             String destination = "";
@@ -59,11 +59,11 @@ public class DatabaseNode {
                 bw.flush();
                 destination = br.readLine();
                 nodeIPs.put(ip,destination);
-                System.out.println("[N]: Connected successfully: saved "+ip+", he sees me as "+destination);
+                System.out.println("["+tcpport+"]: Connected successfully: saved "+ip+", he sees me as "+destination);
 
                 node.close();
             } catch (IOException e) {
-                System.err.println("[N]: Server closed...");
+                System.err.println("["+tcpport+"]: Server closed...");
             }
 
             sockets.remove(node);
@@ -77,13 +77,13 @@ public class DatabaseNode {
                     try {
                         acceptSocket(finalHello);
                     } catch (IOException e) {
-                        System.err.println("[N]: Socket closed...");
+                        System.err.println("["+tcpport+"]: Socket closed...");
                     }
                 });
                 t.start();
                 threads.add(t);
             } catch (IOException e) {
-                System.err.println("[N]: Server closed...");
+                System.err.println("["+tcpport+"]: Server closed...");
             }
         }
     }
@@ -101,10 +101,10 @@ public class DatabaseNode {
         String helloIP = hello.getInetAddress()+":"+hello.getPort();
         BufferedReader br = new BufferedReader(new InputStreamReader(hello.getInputStream()));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(hello.getOutputStream()));
-        System.out.println("[N]: New connection "+helloIP);
+        System.out.println("["+tcpport+"]: New connection "+helloIP);
 
         String request = br.readLine();
-        System.out.println("[N]: Got command from "+helloIP+" : "+request);
+        System.out.println("["+tcpport+"]: Got command from "+helloIP+" : "+request);
 
         String command = request;
         if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
@@ -118,20 +118,20 @@ public class DatabaseNode {
             request = br.readLine();
 
             if (isRequestProcessed(request)) {
-                System.out.println("[N]: My request got back to me! Sending ERROR");
+                System.out.println("["+tcpport+"]: My request got back to me! Sending ERROR");
                 bw.write("ERROR");
                 bw.newLine();
                 bw.flush();
                 hello.close();
                 sockets.remove(hello);
 
-                System.out.println("[N]: Ended connection with "+helloIP);
+                System.out.println("["+tcpport+"]: Ended connection with "+helloIP);
                 return;
             }
             askedNodes.add(nodeIP);
             if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
             else command = request;
-            System.out.println("[N]: Command from node: "+request);
+            System.out.println("["+tcpport+"]: Command from node: "+request);
         }
         switch (command) {
             case "NODE-JOIN": {
@@ -144,7 +144,7 @@ public class DatabaseNode {
                 synchronized (nodeIPs) {
                     nodeIPs.put(sourceIP,destinationIP);
                 }
-                System.out.println("[N]: New node joined: "+sourceIP+", he sees me as: "+destinationIP);
+                System.out.println("["+tcpport+"]: New node joined: "+sourceIP+", he sees me as: "+destinationIP);
                 bw.write(sourceIP);
                 break;
             }
@@ -159,7 +159,7 @@ public class DatabaseNode {
                 try {
                     wantedkey = Integer.parseInt(arg);
                 } catch (Exception e) {
-                    System.out.println("[N]: "+arg+" is invalid");
+                    System.out.println("["+tcpport+"]: "+arg+" is invalid");
                     bw.write("ERROR");
                     bw.flush();
                     hello.close();
@@ -167,10 +167,10 @@ public class DatabaseNode {
                 }
                 synchronized (key) {
                     if (key == wantedkey) {
-                        System.out.println("[N]: Found record: "+wantedkey + ":" + val);
+                        System.out.println("["+tcpport+"]: Found record: "+wantedkey + ":" + val);
                         bw.write(wantedkey + ":" + val);
                     } else {
-                        System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
+                        System.out.println("["+tcpport+"]: Cannot find record "+wantedkey+", will ask other nodes!");
                         synchronized (currentRequests) {
                             currentRequests.add(request);
                         }
@@ -178,12 +178,12 @@ public class DatabaseNode {
                         ArrayList<String> failedNodes = new ArrayList<>();
                         for (String nodeIP : nodeIPs.keySet()) {
                             if (askedNodes.contains(nodeIP)) continue;
-                            System.out.println("[N]: Asking "+nodeIP);
+                            System.out.println("["+tcpport+"]: Asking "+nodeIP);
                             Socket node;
                             try {
                                 node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             } catch (Exception e) {
-                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                System.out.println("["+tcpport+"]: Cannot get to node "+nodeIP+"! Removing it from the list");
                                 failedNodes.add(nodeIP);
                                 continue;
                             }
@@ -199,7 +199,7 @@ public class DatabaseNode {
                             if (!Objects.equals(response, "ERROR")) {
                                 bw.write(response);
                                 found = true;
-                                System.out.println("[N]: "+nodeIP+" found record! Response is: "+response);
+                                System.out.println("["+tcpport+"]: "+nodeIP+" found record! Response is: "+response);
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
@@ -209,7 +209,7 @@ public class DatabaseNode {
                         }
                         if (!found) {
                             bw.write("ERROR");
-                            System.out.println("[N]: Could not find record "+arg);
+                            System.out.println("["+tcpport+"]: Could not find record "+arg);
                         }
                     }
                 }
@@ -223,7 +223,7 @@ public class DatabaseNode {
                     wantedkey = Integer.parseInt(request.substring(request.indexOf(' ') + 1, request.indexOf(':')));
                     newvalue = Integer.parseInt(request.substring(request.indexOf(':') + 1));
                 } catch (Exception e) {
-                    System.out.println("[N]: "+arg+" is invalid");
+                    System.out.println("["+tcpport+"]: "+arg+" is invalid");
                     bw.write("ERROR");
                     bw.flush();
                     hello.close();
@@ -231,11 +231,11 @@ public class DatabaseNode {
                 }
                 synchronized (key) {
                     if (key == wantedkey) {
-                        System.out.println("[N]: I have record: "+wantedkey + ", changing value to: "+newvalue);
+                        System.out.println("["+tcpport+"]: I have record: "+wantedkey + ", changing value to: "+newvalue);
                         val = newvalue;
                         bw.write("OK");
                     } else {
-                        System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
+                        System.out.println("["+tcpport+"]: Cannot find record "+wantedkey+", will ask other nodes!");
                         synchronized (currentRequests) {
                             currentRequests.add(request);
                         }
@@ -243,12 +243,12 @@ public class DatabaseNode {
                         ArrayList<String> failedNodes = new ArrayList<>();
                         for (String nodeIP : nodeIPs.keySet()) {
                             if (askedNodes.contains(nodeIP)) continue;
-                            System.out.println("[N]: Asking "+nodeIP);
+                            System.out.println("["+tcpport+"]: Asking "+nodeIP);
                             Socket node;
                             try {
                                 node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             } catch (Exception e) {
-                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                System.out.println("["+tcpport+"]: Cannot get to node "+nodeIP+"! Removing it from the list");
                                 failedNodes.add(nodeIP);
                                 continue;
                             }
@@ -264,7 +264,7 @@ public class DatabaseNode {
                             if (!Objects.equals(response, "ERROR")) {
                                 bw.write(response);
                                 found = true;
-                                System.out.println("[N]: "+nodeIP+" found record! Response is: "+response);
+                                System.out.println("["+tcpport+"]: "+nodeIP+" found record! Response is: "+response);
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
@@ -274,7 +274,7 @@ public class DatabaseNode {
                         }
                         if (!found) {
                             bw.write("ERROR");
-                            System.out.println("[N]: Could not find record "+arg);
+                            System.out.println("["+tcpport+"]: Could not find record "+arg);
                         }
                     }
                 }
@@ -287,7 +287,7 @@ public class DatabaseNode {
                     Integer.parseInt(split[0]);
                     Integer.parseInt(split[1]);
                 } catch (Exception e) {
-                    System.out.println("[N]: "+arg+" is invalid");
+                    System.out.println("["+tcpport+"]: "+arg+" is invalid");
                     bw.write("ERROR");
                     bw.flush();
                     hello.close();
@@ -306,7 +306,7 @@ public class DatabaseNode {
                 try {
                     wantedkey = Integer.parseInt(arg);
                 } catch (Exception e) {
-                    System.out.println("[N]: "+arg+" is invalid");
+                    System.out.println("["+tcpport+"]: "+arg+" is invalid");
                     bw.write("ERROR");
                     bw.flush();
                     hello.close();
@@ -314,7 +314,7 @@ public class DatabaseNode {
                 }
                 synchronized (key) {
                     if (key == wantedkey) {
-                        System.out.println("[N]: I have "+wantedkey);
+                        System.out.println("["+tcpport+"]: I have "+wantedkey);
                         if (nodeIPs.containsKey(helloIP)) {
                             // to serwer wysyla zapytanie
                             bw.write(nodeIPs.get(helloIP));
@@ -323,7 +323,7 @@ public class DatabaseNode {
                             bw.write(hello.getInetAddress().getHostName()+":"+tcpport);
                         }
                     } else {
-                        System.out.println("[N]: Cannot find record "+wantedkey+", will ask other nodes!");
+                        System.out.println("["+tcpport+"]: Cannot find record "+wantedkey+", will ask other nodes!");
                         synchronized (currentRequests) {
                             currentRequests.add(request);
                         }
@@ -331,12 +331,12 @@ public class DatabaseNode {
                         ArrayList<String> failedNodes = new ArrayList<>();
                         for (String nodeIP : nodeIPs.keySet()) {
                             if (askedNodes.contains(nodeIP)) continue;
-                            System.out.println("[N]: Asking "+nodeIP);
+                            System.out.println("["+tcpport+"]: Asking "+nodeIP);
                             Socket node;
                             try {
                                 node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             } catch (Exception e) {
-                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                System.out.println("["+tcpport+"]: Cannot get to node "+nodeIP+"! Removing it from the list");
                                 failedNodes.add(nodeIP);
                                 continue;
                             }
@@ -352,7 +352,7 @@ public class DatabaseNode {
                             if (!Objects.equals(response, "ERROR")) {
                                 bw.write(response);
                                 found = true;
-                                System.out.println("[N]: "+nodeIP+" says this key has "+response);
+                                System.out.println("["+tcpport+"]: "+nodeIP+" says this key has "+response);
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
@@ -362,7 +362,7 @@ public class DatabaseNode {
                         }
                         if (!found) {
                             bw.write("ERROR");
-                            System.out.println("[N]: Could not find record "+arg);
+                            System.out.println("["+tcpport+"]: Could not find record "+arg);
                         }
                     }
                 }
@@ -373,7 +373,7 @@ public class DatabaseNode {
                     int maxkey = key;
                     int maxval = val;
 
-                    System.out.println("[N]: my record is "+key+":"+val+", will ask other nodes!");
+                    System.out.println("["+tcpport+"]: my record is "+key+":"+val+", will ask other nodes!");
                     synchronized (currentRequests) {
                         currentRequests.add(request);
                     }
@@ -382,12 +382,12 @@ public class DatabaseNode {
                         if (askedNodes.contains(nodeIP)) continue;
                         askedNodes.add(nodeIP);
 
-                        System.out.println("[N]: Asking "+nodeIP);
+                        System.out.println("["+tcpport+"]: Asking "+nodeIP);
                         Socket node;
                         try {
                             node = new Socket(getHost(nodeIP), getPort(nodeIP));
                         } catch (Exception e) {
-                            System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                            System.out.println("["+tcpport+"]: Cannot get to node "+nodeIP+"! Removing it from the list");
                             failedNodes.add(nodeIP);
                             continue;
                         }
@@ -401,7 +401,7 @@ public class DatabaseNode {
                         nodebw.flush();
 
                         String response = nodebr.readLine();
-                        System.out.println("[N]: Got "+response);
+                        System.out.println("["+tcpport+"]: Got "+response);
                         if (!response.equals("ERROR")) {
                             int hiskey = Integer.parseInt(response.substring(0, response.indexOf(':')));
                             int hisval = Integer.parseInt(response.substring(response.indexOf(':')+1));
@@ -416,7 +416,7 @@ public class DatabaseNode {
                         currentRequests.remove(request);
                     }
                     bw.write(maxkey+":"+maxval);
-                    System.out.println("[N]: Sending "+maxkey+":"+maxval);
+                    System.out.println("["+tcpport+"]: Sending "+maxkey+":"+maxval);
                 }
                 break;
             }
@@ -425,7 +425,7 @@ public class DatabaseNode {
                     int minkey = key;
                     int minval = val;
 
-                    System.out.println("[N]: my record is "+key+":"+val+", will ask other nodes!");
+                    System.out.println("["+tcpport+"]: my record is "+key+":"+val+", will ask other nodes!");
                     synchronized (currentRequests) {
                         currentRequests.add(request);
                     }
@@ -434,12 +434,12 @@ public class DatabaseNode {
                         if (askedNodes.contains(nodeIP)) continue;
                         askedNodes.add(nodeIP);
 
-                        System.out.println("[N]: Asking "+nodeIP);
+                        System.out.println("["+tcpport+"]: Asking "+nodeIP);
                         Socket node;
                             try {
                                 node = new Socket(getHost(nodeIP), getPort(nodeIP));
                             } catch (Exception e) {
-                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                System.out.println("["+tcpport+"]: Cannot get to node "+nodeIP+"! Removing it from the list");
                                 failedNodes.add(nodeIP);
                                 continue;
                             }
@@ -453,7 +453,7 @@ public class DatabaseNode {
                         nodebw.flush();
 
                         String response = nodebr.readLine();
-                        System.out.println("[N]: Got "+response);
+                        System.out.println("["+tcpport+"]: Got "+response);
                         if (!response.equals("ERROR")) {
                             int hiskey = Integer.parseInt(response.substring(0, response.indexOf(':')));
                             int hisval = Integer.parseInt(response.substring(response.indexOf(':')+1));
@@ -468,7 +468,7 @@ public class DatabaseNode {
                         currentRequests.remove(request);
                     }
                     bw.write(minkey+":"+minval);
-                    System.out.println("[N]: Sending "+minkey+":"+minval);
+                    System.out.println("["+tcpport+"]: Sending "+minkey+":"+minval);
                 }
                 break;
             }
@@ -479,12 +479,12 @@ public class DatabaseNode {
 
                 ArrayList<String> failedNodes = new ArrayList<>();
                 for (String nodeIP : nodeIPs.keySet()) {
-                    System.out.println("[N]: Saying goodbye to "+nodeIP);
+                    System.out.println("["+tcpport+"]: Saying goodbye to "+nodeIP);
                     Socket node;
                     try {
                         node = new Socket(getHost(nodeIP), getPort(nodeIP));
                     } catch (Exception e) {
-                        System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                        System.out.println("["+tcpport+"]: Cannot get to node "+nodeIP+"! Removing it from the list");
                         failedNodes.add(nodeIP);
                         continue;
                     }
@@ -508,18 +508,18 @@ public class DatabaseNode {
                     }
                 });
                 threads.forEach(Thread::interrupt);
-                System.out.println("[N]: All closed");
+                System.out.println("["+tcpport+"]: All closed");
                 return;
             }
             default:
-                System.out.println("[N]: Error: could not process command: \""+command+"\"");
+                System.out.println("["+tcpport+"]: Error: could not process command: \""+command+"\"");
         }
         bw.flush();
 
         hello.close();
         sockets.remove(hello);
 
-        System.out.println("[N]: Ended connection with "+helloIP);
+        System.out.println("["+tcpport+"]: Ended connection with "+helloIP);
     }
 
     public static synchronized boolean isRequestProcessed(String s) {
