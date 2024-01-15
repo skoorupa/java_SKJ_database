@@ -176,10 +176,18 @@ public class DatabaseNode {
                             currentRequests.add(request);
                         }
                         boolean found = false;
+                        ArrayList<String> failedNodes = new ArrayList<>();
                         for (String nodeIP : nodeIPs.keySet()) {
                             if (askedNodes.contains(nodeIP)) continue;
                             System.out.println("[N]: Asking "+nodeIP);
-                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            Socket node;
+                            try {
+                                node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            } catch (Exception e) {
+                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                failedNodes.add(nodeIP);
+                                continue;
+                            }
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                             nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
@@ -196,6 +204,7 @@ public class DatabaseNode {
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
+                        failedNodes.forEach(node->nodeIPs.remove(node));
                         synchronized (currentRequests) {
                             currentRequests.remove(request);
                         }
@@ -232,10 +241,18 @@ public class DatabaseNode {
                             currentRequests.add(request);
                         }
                         boolean found = false;
+                        ArrayList<String> failedNodes = new ArrayList<>();
                         for (String nodeIP : nodeIPs.keySet()) {
                             if (askedNodes.contains(nodeIP)) continue;
                             System.out.println("[N]: Asking "+nodeIP);
-                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            Socket node;
+                            try {
+                                node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            } catch (Exception e) {
+                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                failedNodes.add(nodeIP);
+                                continue;
+                            }
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                             nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
@@ -252,6 +269,7 @@ public class DatabaseNode {
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
+                        failedNodes.forEach(node->nodeIPs.remove(node));
                         synchronized (currentRequests) {
                             currentRequests.remove(request);
                         }
@@ -311,10 +329,18 @@ public class DatabaseNode {
                             currentRequests.add(request);
                         }
                         boolean found = false;
+                        ArrayList<String> failedNodes = new ArrayList<>();
                         for (String nodeIP : nodeIPs.keySet()) {
                             if (askedNodes.contains(nodeIP)) continue;
                             System.out.println("[N]: Asking "+nodeIP);
-                            Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            Socket node;
+                            try {
+                                node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            } catch (Exception e) {
+                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                failedNodes.add(nodeIP);
+                                continue;
+                            }
                             BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                             BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                             nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
@@ -331,6 +357,7 @@ public class DatabaseNode {
                                 break;
                             } else askedNodes.add(nodeIP);
                         }
+                        failedNodes.forEach(node->nodeIPs.remove(node));
                         synchronized (currentRequests) {
                             currentRequests.remove(request);
                         }
@@ -351,12 +378,20 @@ public class DatabaseNode {
                     synchronized (currentRequests) {
                         currentRequests.add(request);
                     }
+                    ArrayList<String> failedNodes = new ArrayList<>();
                     for (String nodeIP : nodeIPs.keySet()) {
                         if (askedNodes.contains(nodeIP)) continue;
                         askedNodes.add(nodeIP);
 
                         System.out.println("[N]: Asking "+nodeIP);
-                        Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                        Socket node;
+                        try {
+                            node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                        } catch (Exception e) {
+                            System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                            failedNodes.add(nodeIP);
+                            continue;
+                        }
                         BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                         BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                         nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
@@ -377,6 +412,7 @@ public class DatabaseNode {
                             }
                         }
                     }
+                    failedNodes.forEach(node->nodeIPs.remove(node));
                     synchronized (currentRequests) {
                         currentRequests.remove(request);
                     }
@@ -394,12 +430,20 @@ public class DatabaseNode {
                     synchronized (currentRequests) {
                         currentRequests.add(request);
                     }
+                    ArrayList<String> failedNodes = new ArrayList<>();
                     for (String nodeIP : nodeIPs.keySet()) {
                         if (askedNodes.contains(nodeIP)) continue;
                         askedNodes.add(nodeIP);
 
                         System.out.println("[N]: Asking "+nodeIP);
-                        Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                        Socket node;
+                            try {
+                                node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                            } catch (Exception e) {
+                                System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                                failedNodes.add(nodeIP);
+                                continue;
+                            }
                         BufferedReader nodebr = new BufferedReader(new InputStreamReader(node.getInputStream()));
                         BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                         nodebw.write("NODE-ASK "+nodeIPs.get(nodeIP));
@@ -420,6 +464,7 @@ public class DatabaseNode {
                             }
                         }
                     }
+                    failedNodes.forEach(node->nodeIPs.remove(node));
                     synchronized (currentRequests) {
                         currentRequests.remove(request);
                     }
@@ -433,15 +478,24 @@ public class DatabaseNode {
                 server.close();
                 bw.write("OK");
 
+                ArrayList<String> failedNodes = new ArrayList<>();
                 for (String nodeIP : nodeIPs.keySet()) {
                     System.out.println("[N]: Saying goodbye to "+nodeIP);
-                    Socket node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                    Socket node;
+                    try {
+                        node = new Socket(getHost(nodeIP), getPort(nodeIP));
+                    } catch (Exception e) {
+                        System.out.println("[N]: Cannot get to node "+nodeIP+"! Removing it from the list");
+                        failedNodes.add(nodeIP);
+                        continue;
+                    }
                     BufferedWriter nodebw = new BufferedWriter(new OutputStreamWriter(node.getOutputStream()));
                     nodebw.write("NODE-BYE "+nodeIPs.get(nodeIP));
                     nodebw.newLine();
                     nodebw.flush();
                     node.close();
                 }
+                failedNodes.forEach(node->nodeIPs.remove(node));
 
                 bw.flush();
                 hello.close();
