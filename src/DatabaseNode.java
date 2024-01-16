@@ -132,7 +132,7 @@ public class DatabaseNode {
             askedNodes.add(nodeIP);
             if (request.indexOf(' ') != -1) command = request.substring(0, request.indexOf(' '));
             else command = request;
-            System.out.println("["+tcpport+"]: Command from node: "+request);
+            System.out.println("["+tcpport+"]: Command from node "+nodeIP+": "+request);
         }
         switch (command) {
             case "NODE-JOIN": {
