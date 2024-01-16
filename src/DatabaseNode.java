@@ -12,6 +12,7 @@ public class DatabaseNode {
     static ServerSocket server;
     static Integer key;
     static Integer val;
+    static Object recordLock;
     static ArrayList<String> connect_ips = new ArrayList<>();
     static HashMap<String,String> nodeIPs = new HashMap<>(); // K - node IP, V - moj IP u innych
     static HashSet<String> currentRequests = new HashSet<>();
@@ -165,7 +166,7 @@ public class DatabaseNode {
                     hello.close();
                     return;
                 }
-                synchronized (key) {
+                synchronized (recordLock) {
                     if (key == wantedkey) {
                         System.out.println("["+tcpport+"]: Found record: "+wantedkey + ":" + val);
                         bw.write(wantedkey + ":" + val);
@@ -229,7 +230,7 @@ public class DatabaseNode {
                     hello.close();
                     return;
                 }
-                synchronized (key) {
+                synchronized (recordLock) {
                     if (key == wantedkey) {
                         System.out.println("["+tcpport+"]: I have record: "+wantedkey + ", changing value to: "+newvalue);
                         val = newvalue;
@@ -293,7 +294,7 @@ public class DatabaseNode {
                     hello.close();
                     return;
                 }
-                synchronized (key) {
+                synchronized (recordLock) {
                     key = Integer.parseInt(split[0]);
                     val = Integer.parseInt(split[1]);
                     System.out.println("["+tcpport+"]: set new pair: "+key+":"+val);
@@ -313,7 +314,7 @@ public class DatabaseNode {
                     hello.close();
                     return;
                 }
-                synchronized (key) {
+                synchronized (recordLock) {
                     if (key == wantedkey) {
                         System.out.println("["+tcpport+"]: I have "+wantedkey);
                         if (nodeIPs.containsKey(helloIP)) {
@@ -370,7 +371,7 @@ public class DatabaseNode {
                 break;
             }
             case "get-max" : {
-                synchronized (key) {
+                synchronized (recordLock) {
                     int maxkey = key;
                     int maxval = val;
 
@@ -422,7 +423,7 @@ public class DatabaseNode {
                 break;
             }
             case "get-min" : {
-                synchronized (key) {
+                synchronized (recordLock) {
                     int minkey = key;
                     int minval = val;
 
