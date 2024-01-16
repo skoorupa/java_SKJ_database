@@ -12,7 +12,7 @@ public class DatabaseNode {
     static ServerSocket server;
     static Integer key;
     static Integer val;
-    static Object recordLock;
+    static Object recordLock = new Object();
     static ArrayList<String> connect_ips = new ArrayList<>();
     static HashMap<String,String> nodeIPs = new HashMap<>(); // K - node IP, V - moj IP u innych
     static HashSet<String> currentRequests = new HashSet<>();
