@@ -64,7 +64,7 @@ public class DatabaseNode {
 
                 node.close();
             } catch (IOException e) {
-                System.err.println("["+tcpport+"]: Server closed...");
+                System.err.println("["+tcpport+"]: Server "+ip+" does not exist");
             }
 
             sockets.remove(node);
